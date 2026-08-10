@@ -332,31 +332,43 @@
       overflow: hidden;
     }
     #intro.done { opacity: 0; visibility: hidden; pointer-events: none; }
-    .int-fly { position: absolute; width: clamp(200px, 40vw, 460px); height: auto; will-change: transform; }
-    .int-fly video { width: 100%; height: auto; display: block; mix-blend-mode: screen; pointer-events: none; }
+    .int-fly { position: absolute; width: 46vw; will-change: left, top; z-index: 3; }
+    .int-fly.fs { z-index: 4; }
+    .int-fly video { width: 100%; height: auto; display: block; mix-blend-mode: screen; pointer-events: none; animation: vidGrow 2.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
     .int-streak {
-      position: absolute; top: 46%; height: 34%; left: -160%; width: 320%;
+      position: absolute; right: 78%; top: 40%; width: 210%; height: 32%;
       border-radius: 999px; filter: blur(14px); opacity: 0.8; pointer-events: none;
-      background: linear-gradient(90deg, transparent, #ff8a00 55%, transparent);
+      background: linear-gradient(90deg, transparent, #ff8a00 62%, transparent);
     }
-    .int-streak.s-s { background: linear-gradient(90deg, transparent, #00c8ff 55%, transparent); }
-    .fly-n { animation: flyN 2.9s cubic-bezier(0.22, 1, 0.36, 1) both; z-index: 3; }
-    .fly-s { animation: flyS 2.9s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both; z-index: 4; }
-    @keyframes flyN {
-      0% { transform: translate(calc(-50% - 55vw), -50%) scale(0.5) rotate(-6deg); }
-      16% { transform: translate(calc(-50% + 6vw), -50%) scale(0.95) rotate(3deg); }
-      34% { transform: translate(calc(-50% + 24vw), -52%) scale(1.08) rotate(-4deg); }
-      58% { transform: translate(calc(-50% + 52vw), -50%) scale(1.04) rotate(2deg); }
-      80% { transform: translate(calc(-50% + 86vw), -53%) scale(1.12) rotate(-3deg); }
-      100% { transform: translate(calc(-50% + 132vw), -50%) scale(1); }
+    .int-streak.s-s {
+      left: 78%; right: auto;
+      background: linear-gradient(90deg, transparent, #00c8ff 62%, transparent);
     }
-    @keyframes flyS {
-      0% { transform: translate(calc(-50% - 70vw), -44%) scale(0.45) rotate(8deg); }
-      18% { transform: translate(calc(-50% - 2vw), -47%) scale(0.9) rotate(-4deg); }
-      36% { transform: translate(calc(-50% + 16vw), -44%) scale(1.02) rotate(3deg); }
-      58% { transform: translate(calc(-50% + 44vw), -48%) scale(1) rotate(-2deg); }
-      82% { transform: translate(calc(-50% + 78vw), -44%) scale(1.08) rotate(4deg); }
-      100% { transform: translate(calc(-50% + 124vw), -48%) scale(1); }
+    .fly-n { animation: flyNPos 2.9s cubic-bezier(0.25, 0.7, 0.3, 1) both; }
+    .fly-s { animation: flySPos 2.9s cubic-bezier(0.25, 0.7, 0.3, 1) both; }
+    @keyframes flyNPos {
+      0% { left: -55vw; top: 50%; }
+      18% { left: 12vw; top: 47%; }
+      38% { left: calc(50% - 28vw); top: 53%; }
+      46% { left: calc(50% - 23vw); top: 50%; }
+      53% { left: calc(50% - 23vw - 26px); top: 50%; }
+      62%, 100% { left: calc(50% - 23vw); top: 50%; }
+    }
+    @keyframes flySPos {
+      0% { left: 100vw; top: 50%; }
+      18% { left: 66vw; top: 53%; }
+      38% { left: calc(50% - 18vw); top: 47%; }
+      46% { left: calc(50% - 23vw); top: 50%; }
+      53% { left: calc(50% - 23vw + 26px); top: 50%; }
+      62%, 100% { left: calc(50% - 23vw); top: 50%; }
+    }
+    @keyframes vidGrow {
+      0% { transform: scale(0.55) rotate(-8deg); }
+      30% { transform: scale(0.95) rotate(4deg); }
+      46% { transform: scale(1.18) rotate(0deg); }
+      55% { transform: scale(1.02) rotate(-4deg); }
+      65% { transform: scale(1) rotate(2deg); }
+      80%, 100% { transform: scale(1) rotate(0deg); }
     }
     .int-line {
       position: absolute; height: 1px; width: 55vw; border-radius: 999px;
@@ -377,15 +389,26 @@
       position: absolute; left: 0; right: 0; text-align: center;
       bottom: 9vh; font-size: 13px; font-weight: 700; letter-spacing: 0.3em;
       color: rgba(245, 245, 247, 0.85); text-transform: uppercase;
-      opacity: 0; animation: titleIn 0.7s ease 2.0s both;
+      opacity: 0; animation: titleIn 0.7s ease 1.85s both;
     }
     @keyframes titleIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
     .int-flash {
       position: absolute; inset: 0; pointer-events: none;
-      background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.95), transparent 42%);
-      opacity: 0; animation: intFlash 0.75s ease-out 2.45s both;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.95), transparent 42%);
+      opacity: 0; animation: intFlash 0.75s ease-out 1.33s both;
     }
     @keyframes intFlash { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
+    .int-boom {
+      position: absolute; left: 50%; top: 50%;
+      width: 150px; height: 150px; margin: -75px 0 0 -75px;
+      border: 2px solid rgba(255,255,255,0.6); border-radius: 50%;
+      animation: boom 0.9s ease-out 1.33s both;
+      pointer-events: none;
+    }
+    @keyframes boom {
+      0% { opacity: 0.9; transform: scale(0.35); }
+      100% { opacity: 0; transform: scale(5.2); }
+    }
     @media (max-width: 560px) {
       #intro .int-title { bottom: 12vh; letter-spacing: 0.18em; }
     }
@@ -402,10 +425,11 @@
       <div class="int-streak"></div>
       <video src="assets/naruto.mp4" muted autoplay loop playsinline></video>
     </div>
-    <div class="int-fly fly-s">
+    <div class="int-fly fs fly-s">
       <div class="int-streak s-s"></div>
       <video src="assets/sasuke.mp4" muted autoplay loop playsinline></video>
     </div>
+    <div class="int-boom"></div>
     <div class="int-title">NARUTO <span style="color:#86868b;font-weight:400;letter-spacing:0.1em;">×</span> SASUKE</div>
     <div class="int-flash"></div>
   </div>
