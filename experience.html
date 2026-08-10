@@ -56,6 +56,20 @@
     @media (max-width: 640px) {
       .hint { white-space: normal; width: calc(100% - 32px); border-radius: 16px; }
     }
+    .cam-btn {
+      position: fixed; right: 16px; bottom: 18px; z-index: 100;
+      width: 46px; height: 46px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(10,10,16,0.55); border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: #f5f5f7; cursor: pointer;
+      transition: background 0.25s, transform 0.25s;
+    }
+    .cam-btn:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
+    .cam-btn:disabled { opacity: 0.5; cursor: wait; }
+    @media (max-width: 640px) {
+      .cam-btn { bottom: 64px; }
+    }
 
     /* ---------- Loading intro: Rasengan x Chidori ---------- */
     #loadOverlay {
@@ -179,6 +193,10 @@
   <div class="darkness"></div>
 
   <div class="hint">Left hand = Naruto &nbsp;·&nbsp; Right hand = Sasuke</div>
+
+  <button id="camBtn" class="cam-btn" title="Ganti kamera" aria-label="Ganti kamera">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a9 9 0 0 1 15-3l2 2"/><path d="M21 16a9 9 0 0 1-15 3l-2-2"/><path d="M20 4v3h-3"/><path d="M4 20v-3h3"/></svg>
+  </button>
 
   <video id="n" class="fx" src="assets/naruto.mp4" muted autoplay loop playsinline></video>
   <video id="s" class="fx" src="assets/sasuke.mp4" muted autoplay loop playsinline></video>
@@ -315,11 +333,34 @@
 
     h.onResults(onResults);
 
-    const cam = new Camera(vElement, {
+    let cam = null;
+    let facing = 'user';
+    const camBtn = document.getElementById('camBtn');
+
+    function startCam() {
+      if (cam) cam.stop();
+      cam = new Camera(vElement, {
         onFrame: async () => { await h.send({ image: vElement }); },
-        width: 1280, height: 720
+        width: 1280, height: 720,
+        facingMode: facing
+      });
+      return cam.start();
+    }
+
+    camBtn.addEventListener('click', async () => {
+      camBtn.disabled = true;
+      const prev = facing;
+      facing = facing === 'user' ? 'environment' : 'user';
+      try {
+        await startCam();
+      } catch (err) {
+        facing = prev;
+        await startCam().catch(() => {});
+      }
+      camBtn.disabled = false;
     });
-    cam.start().catch(() => {
+
+    startCam().catch(() => {
         loadFailed = true;
         document.getElementById('lErr').hidden = false;
         document.getElementById('lBarWrap').style.display = 'none';
