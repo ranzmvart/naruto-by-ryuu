@@ -78,16 +78,20 @@
     .vid-n { animation: nInV 2.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
     .vid-s { animation: sInV 2.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
     @keyframes nInV {
-      0% { transform: translate(calc(-50% - 55vw), -50%) scale(0.55); }
-      38% { transform: translate(-50%, -50%) scale(1); }
-      55% { transform: translate(calc(-50% - 52px), -50%) scale(1.08); }
-      75%, 100% { transform: translate(calc(-50% - 40px), -50%) scale(1); }
+      0% { transform: translate(calc(-50% - 55vw), -50%) scale(0.6); }
+      40% { transform: translate(-50%, -50%) scale(1.1); }
+      46% { transform: translate(calc(-50% - 20px), -50%) scale(1.06); }
+      54% { transform: translate(calc(-50% + 10px), -50%) scale(1); }
+      62% { transform: translate(calc(-50% - 14px), -50%) scale(1); }
+      70%, 100% { transform: translate(-50%, -50%) scale(1); }
     }
     @keyframes sInV {
-      0% { transform: translate(calc(-50% + 55vw), -50%) scale(0.55); }
-      38% { transform: translate(-50%, -50%) scale(1); }
-      55% { transform: translate(calc(-50% + 52px), -50%) scale(1.08); }
-      75%, 100% { transform: translate(calc(-50% + 40px), -50%) scale(1); }
+      0% { transform: translate(calc(-50% + 55vw), -50%) scale(0.6); }
+      40% { transform: translate(-50%, -50%) scale(1.1); }
+      46% { transform: translate(calc(-50% + 20px), -50%) scale(1.06); }
+      54% { transform: translate(calc(-50% - 10px), -50%) scale(1); }
+      62% { transform: translate(calc(-50% + 14px), -50%) scale(1); }
+      70%, 100% { transform: translate(-50%, -50%) scale(1); }
     }
     .l-orbit {
       position: absolute; left: 50%; top: 50%;
@@ -104,11 +108,24 @@
       position: absolute; left: 50%; top: 50%;
       width: 140px; height: 140px; margin: -70px 0 0 -70px;
       border: 2px solid rgba(255,255,255,0.65); border-radius: 50%;
-      animation: boom 0.9s ease-out 1.0s both;
+      animation: boom 0.9s ease-out 1.04s both;
     }
     @keyframes boom {
       0% { opacity: 0.9; transform: scale(0.35); }
       100% { opacity: 0; transform: scale(5.2); }
+    }
+    .l-flash {
+      position: absolute; left: 50%; top: 50%;
+      width: 240px; height: 240px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,255,255,0.35) 45%, transparent 70%);
+      filter: blur(6px); border-radius: 50%;
+      opacity: 0; animation: flashA 0.55s ease-out 1.04s both;
+    }
+    @keyframes flashA {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+      30% { opacity: 0.9; }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(2.6); }
     }
     .l-text { text-align: center; margin-top: 64px; padding: 0 24px 40px; }
     .l-title { font-size: 15px; font-weight: 700; letter-spacing: 0.14em; color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -128,7 +145,7 @@
       font-weight: 600; font-size: 13px; padding: 9px 20px; border-radius: 999px;
     }
     @media (prefers-reduced-motion: reduce) {
-      .l-vid, .l-orbit, .l-boom, .l-bar i { animation: none !important; }
+      .l-vid, .l-orbit, .l-boom, .l-flash, .l-bar i { animation: none !important; }
       .l-vid { transform: translate(-50%, -50%) scale(1); }
       .l-orbit { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
@@ -141,6 +158,7 @@
       <div class="l-orbit"></div>
       <video id="lN" class="l-vid vid-n" src="assets/naruto.mp4" muted autoplay loop playsinline></video>
       <video id="lS" class="l-vid vid-s" src="assets/sasuke.mp4" muted autoplay loop playsinline></video>
+      <div class="l-flash"></div>
       <div class="l-boom"></div>
     </div>
     <div class="l-text">
