@@ -56,6 +56,7 @@ Site is deployed and auto-rebuilt on every push from the `main` branch.
 ├── assets/
 │   ├── naruto.mp4       # Rasengan effect video
 │   ├── sasuke.mp4       # Chidori effect video
+│   ├── amv.mp4          # Naruto vs Sasuke AMV (landing hero)
 │   └── sound/
 │       ├── rasengan.mp3 # Rasengan SFX
 │       ├── chidori.mp3  # Chidori SFX

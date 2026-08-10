@@ -138,6 +138,47 @@
     .hero-cta .cta-btn { padding: 15px 32px; font-size: 15.5px; }
     .hero small { margin-top: 22px; font-size: 12.5px; color: var(--text-dim); opacity: 0.8; }
 
+    /* ---------- Hero AMV ---------- */
+    .hero-video {
+      position: relative; margin: 64px auto 0; width: 100%; max-width: 920px;
+      border-radius: 26px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255,255,255,0.03) inset;
+      aspect-ratio: 16 / 9; background: #000;
+    }
+    .hero-video video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transform: scale(1.02);
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .hero-video:hover video { transform: scale(1.045); }
+    .hero-video::before {
+      content: ""; position: absolute; inset: 0; z-index: 2;
+      background: linear-gradient(180deg, rgba(5,5,8,0.35), transparent 26%, transparent 72%, rgba(5,5,8,0.55));
+    }
+    .hero-video::after {
+      content: ""; position: absolute; inset: -1px; z-index: 3; border-radius: 26px; pointer-events: none;
+      box-shadow: 0 0 90px 12px rgba(255, 110, 0, 0.14) inset, 0 0 90px 12px rgba(0, 152, 255, 0.12) inset;
+    }
+    .hv-chip {
+      position: absolute; z-index: 4; top: 18px; left: 18px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+      color: #f5f5f7;
+      background: rgba(10,10,16,0.55); border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      padding: 7px 14px; border-radius: 999px;
+    }
+    .hv-glare {
+      position: absolute; z-index: 4; bottom: -40%; left: -20%; width: 140%; height: 70%;
+      background: linear-gradient(95deg, transparent 44%, rgba(255,255,255,0.05) 50%, transparent 56%);
+      transform: rotate(8deg); pointer-events: none;
+      animation: glareMove 5.5s ease-in-out infinite;
+    }
+    @keyframes glareMove {
+      0%, 60% { transform: rotate(8deg) translateX(-16%); }
+      85%, 100% { transform: rotate(8deg) translateX(16%); }
+    }
+
     /* ---------- Section titles ---------- */
     .section-label {
       text-align: center; font-size: 12.5px; font-weight: 700;
@@ -505,6 +546,12 @@
       <a class="cta-btn ghost" href="#features">How it works</a>
     </div>
     <small>Works on any device with a camera · Hand tracking runs 100% on your device</small>
+
+    <div class="hero-video rv">
+      <video src="assets/amv.mp4" muted autoplay loop playsinline preload="metadata" aria-label="Naruto vs Sasuke AMV"></video>
+      <span class="hv-chip">Naruto vs Sasuke · AMV</span>
+      <span class="hv-glare"></span>
+    </div>
   </header>
 
   <main id="features">
