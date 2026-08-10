@@ -320,9 +320,95 @@
       *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
       .rv { opacity: 1; transform: none; }
     }
+
+    /* ---------- Cinematic intro ---------- */
+    #intro {
+      position: fixed; inset: 0; z-index: 600;
+      background: #050508;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      opacity: 1;
+      transition: opacity 0.8s ease 0.2s, visibility 0s linear 1s;
+      overflow: hidden;
+    }
+    #intro.done { opacity: 0; visibility: hidden; pointer-events: none; }
+    .int-fly { position: absolute; width: clamp(200px, 40vw, 460px); height: auto; will-change: transform; }
+    .int-fly video { width: 100%; height: auto; display: block; mix-blend-mode: screen; pointer-events: none; }
+    .int-streak {
+      position: absolute; top: 46%; height: 34%; left: -160%; width: 320%;
+      border-radius: 999px; filter: blur(14px); opacity: 0.8; pointer-events: none;
+      background: linear-gradient(90deg, transparent, #ff8a00 55%, transparent);
+    }
+    .int-streak.s-s { background: linear-gradient(90deg, transparent, #00c8ff 55%, transparent); }
+    .fly-n { animation: flyN 2.9s cubic-bezier(0.22, 1, 0.36, 1) both; z-index: 3; }
+    .fly-s { animation: flyS 2.9s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both; z-index: 4; }
+    @keyframes flyN {
+      0% { transform: translate(calc(-50% - 55vw), -50%) scale(0.5) rotate(-6deg); }
+      16% { transform: translate(calc(-50% + 6vw), -50%) scale(0.95) rotate(3deg); }
+      34% { transform: translate(calc(-50% + 24vw), -52%) scale(1.08) rotate(-4deg); }
+      58% { transform: translate(calc(-50% + 52vw), -50%) scale(1.04) rotate(2deg); }
+      80% { transform: translate(calc(-50% + 86vw), -53%) scale(1.12) rotate(-3deg); }
+      100% { transform: translate(calc(-50% + 132vw), -50%) scale(1); }
+    }
+    @keyframes flyS {
+      0% { transform: translate(calc(-50% - 70vw), -44%) scale(0.45) rotate(8deg); }
+      18% { transform: translate(calc(-50% - 2vw), -47%) scale(0.9) rotate(-4deg); }
+      36% { transform: translate(calc(-50% + 16vw), -44%) scale(1.02) rotate(3deg); }
+      58% { transform: translate(calc(-50% + 44vw), -48%) scale(1) rotate(-2deg); }
+      82% { transform: translate(calc(-50% + 78vw), -44%) scale(1.08) rotate(4deg); }
+      100% { transform: translate(calc(-50% + 124vw), -48%) scale(1); }
+    }
+    .int-line {
+      position: absolute; height: 1px; width: 55vw; border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+      opacity: 0; animation: lineRush 0.9s linear infinite;
+    }
+    @keyframes lineRush {
+      0% { left: 110vw; opacity: 0; }
+      10% { opacity: 0.5; }
+      90% { opacity: 0.5; }
+      100% { left: -70vw; opacity: 0; }
+    }
+    .int-line:nth-child(1) { top: 22%; animation-delay: 0s; }
+    .int-line:nth-child(2) { top: 34%; animation-delay: 0.25s; }
+    .int-line:nth-child(3) { top: 66%; animation-delay: 0.4s; }
+    .int-line:nth-child(4) { top: 79%; animation-delay: 0.12s; }
+    .int-title {
+      position: absolute; left: 0; right: 0; text-align: center;
+      bottom: 9vh; font-size: 13px; font-weight: 700; letter-spacing: 0.3em;
+      color: rgba(245, 245, 247, 0.85); text-transform: uppercase;
+      opacity: 0; animation: titleIn 0.7s ease 2.0s both;
+    }
+    @keyframes titleIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    .int-flash {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.95), transparent 42%);
+      opacity: 0; animation: intFlash 0.75s ease-out 2.45s both;
+    }
+    @keyframes intFlash { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
+    @media (max-width: 560px) {
+      #intro .int-title { bottom: 12vh; letter-spacing: 0.18em; }
+    }
   </style>
 </head>
 <body>
+
+  <div id="intro" title="Skip intro">
+    <div class="int-line"></div>
+    <div class="int-line"></div>
+    <div class="int-line"></div>
+    <div class="int-line"></div>
+    <div class="int-fly fly-n">
+      <div class="int-streak"></div>
+      <video src="assets/naruto.mp4" muted autoplay loop playsinline></video>
+    </div>
+    <div class="int-fly fly-s">
+      <div class="int-streak s-s"></div>
+      <video src="assets/sasuke.mp4" muted autoplay loop playsinline></video>
+    </div>
+    <div class="int-title">NARUTO <span style="color:#86868b;font-weight:400;letter-spacing:0.1em;">×</span> SASUKE</div>
+    <div class="int-flash"></div>
+  </div>
 
   <div class="glow"></div>
   <div class="grid-bg"></div>
@@ -545,10 +631,38 @@
     const nav = document.getElementById('nav');
     window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 10), { passive: true });
 
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-    }, { threshold: 0.12 });
-    document.querySelectorAll('.rv').forEach(el => io.observe(el));
+    const intro = document.getElementById('intro');
+    let introOver = false;
+
+    function initReveal() {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.12 });
+      document.querySelectorAll('.rv').forEach(el => io.observe(el));
+    }
+
+    function endIntro() {
+      if (introOver) return;
+      introOver = true;
+      intro.classList.add('done');
+      intro.querySelectorAll('video').forEach(v => { v.pause(); v.removeAttribute('src'); });
+      initReveal();
+    }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      intro.style.display = 'none';
+      initReveal();
+    } else {
+      intro.addEventListener('click', () => {
+        endIntro();
+        nav.classList.add('scrolled');
+        document.querySelectorAll('.rv').forEach(el => el.classList.add('in'));
+      });
+      window.addEventListener('keydown', e => { if (e.key === 'Escape') endIntro(); });
+      intro.querySelectorAll('video').forEach(v => v.play().catch(() => {}));
+      setTimeout(endIntro, 3400);
+    }
   </script>
 </body>
 </html>
