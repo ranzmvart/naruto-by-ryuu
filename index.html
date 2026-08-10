@@ -324,7 +324,7 @@
     /* ---------- Cinematic intro ---------- */
     #intro {
       position: fixed; inset: 0; z-index: 600;
-      background: #050508;
+      background: #000;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       opacity: 1;
@@ -332,9 +332,14 @@
       overflow: hidden;
     }
     #intro.done { opacity: 0; visibility: hidden; pointer-events: none; }
-    .int-fly { position: absolute; width: 46vw; will-change: left, top; z-index: 3; }
-    .int-fly.fs { z-index: 4; }
-    .int-fly video { width: 100%; height: auto; display: block; mix-blend-mode: screen; pointer-events: none; animation: vidGrow 2.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    .int-fly { position: absolute; width: 46vw; }
+    .int-fly video {
+      width: 100%; height: auto; display: block; mix-blend-mode: screen;
+      pointer-events: none;
+      -webkit-mask-image: radial-gradient(ellipse 60% 58% at 50% 50%, black 52%, transparent 78%);
+      mask-image: radial-gradient(ellipse 60% 58% at 50% 50%, black 52%, transparent 78%);
+      animation: vidGrow 2.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
     .int-streak {
       position: absolute; right: 78%; top: 40%; width: 210%; height: 32%;
       border-radius: 999px; filter: blur(14px); opacity: 0.8; pointer-events: none;
