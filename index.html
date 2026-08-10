@@ -321,6 +321,38 @@
       .rv { opacity: 1; transform: none; }
     }
 
+    /* ---------- Music player ---------- */
+    .music-btn {
+      position: fixed; left: 16px; bottom: 18px; z-index: 100;
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(15, 15, 20, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 18px;
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      color: var(--text); cursor: pointer;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      transition: background 0.25s, transform 0.25s;
+      display: none;
+      align-items: center;
+    }
+    .music-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+    .music-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .music-btn .play-ic { display: block; }
+    .music-btn .pause-ic { display: none; }
+    .music-btn.playing .play-ic { display: none; }
+    .music-btn.playing .pause-ic { display: block; }
+    .eq { display: inline-flex; align-items: flex-end; gap: 2.5px; height: 14px; margin-left: 4px; }
+    .eq i { width: 3px; border-radius: 2px; background: linear-gradient(to top, var(--orange), var(--blue)); animation: eqJump 1s ease-in-out infinite; opacity: 0; }
+    .music-btn.playing .eq i { opacity: 1; }
+    .eq i:nth-child(1) { animation-delay: 0s; }
+    .eq i:nth-child(2) { animation-delay: 0.18s; }
+    .eq i:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes eqJump {
+      0%, 100% { height: 4px; }
+      50% { height: 14px; }
+    }
+
     /* ---------- Cinematic intro ---------- */
     #intro {
       position: fixed; inset: 0; z-index: 600;
@@ -441,6 +473,14 @@
 
   <div class="glow"></div>
   <div class="grid-bg"></div>
+
+  <audio id="bgm" src="assets/sound/shouting-star.mp3" loop preload="none"></audio>
+  <button id="musicBtn" class="music-btn" aria-label="Music on/off">
+    <svg class="play-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V6l12 6-12 6z" fill="currentColor" stroke="none"/></svg>
+    <svg class="pause-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 5v14M16 5v14" stroke="currentColor"/></svg>
+    <span>Shouting Star</span>
+    <span class="eq"><i></i><i></i><i></i></span>
+  </button>
 
   <nav id="nav">
     <div class="nav-inner">
@@ -662,6 +702,20 @@
 
     const intro = document.getElementById('intro');
     let introOver = false;
+
+    const bgm = document.getElementById('bgm');
+    const musicBtn = document.getElementById('musicBtn');
+    let musicOn = false;
+
+    if (bgm.readyState > 0 || bgm.currentSrc) musicBtn.style.display = 'inline-flex';
+    bgm.addEventListener('loadeddata', () => { musicBtn.style.display = 'inline-flex'; });
+
+    musicBtn.addEventListener('click', () => {
+      musicOn = !musicOn;
+      musicBtn.classList.toggle('playing', musicOn);
+      if (musicOn) bgm.play().catch(() => { musicOn = false; musicBtn.classList.remove('playing'); });
+      else bgm.pause();
+    });
 
     function initReveal() {
       const io = new IntersectionObserver((entries) => {
