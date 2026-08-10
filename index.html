@@ -3,163 +3,543 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>naruto</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-
+  <title>NARUTO × SASUKE — Hand-Powered Ninja Experience</title>
+  <meta name="description" content="A real-time hand tracking ninja experience powered by MediaPipe. Open your hand and unleash Naruto & Sasuke powers — right in your browser, on Netlify.">
+  <meta property="og:title" content="NARUTO × SASUKE — Hand-Powered Ninja Experience">
+  <meta property="og:description" content="Real-time hand tracking. Open your hand, unleash the power.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23ff8a00'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23ffd9a8'/%3E%3C/svg%3E">
   <style>
-    body { margin: 0; overflow: hidden; background-color: black; }
-    #v_src, #out {
-      position: absolute; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      object-fit: cover; transform: scaleX(-1);
+    :root {
+      --bg: #050508;
+      --bg-soft: #0a0a10;
+      --card: rgba(255, 255, 255, 0.045);
+      --card-hover: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.09);
+      --text: #f5f5f7;
+      --text-dim: #86868b;
+      --orange: #ff8a00;
+      --orange-2: #ff5e00;
+      --blue: #00c8ff;
+      --blue-2: #0066ff;
+      --radius: 28px;
     }
-    #out { z-index: 2; pointer-events: none; }
-    .darkness {
-      position: absolute; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(10, 5, 0, 0.3);
-      mix-blend-mode: multiply; pointer-events: none; z-index: 5;
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
-    .fx {
-      position: absolute; height: auto; top: 0; left: 0;
-      transform: translate(-50%, -50%);
-      pointer-events: none; display: none;
-      mix-blend-mode: screen; z-index: 20;
+
+    ::selection { background: rgba(255, 138, 0, 0.35); }
+
+    /* ---------- Background glows ---------- */
+    .glow {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(600px 420px at 12% -5%, rgba(255, 138, 0, 0.16), transparent 65%),
+        radial-gradient(700px 480px at 92% 8%, rgba(0, 152, 255, 0.14), transparent 65%),
+        radial-gradient(800px 600px at 50% 115%, rgba(255, 94, 0, 0.07), transparent 70%);
     }
-    #n { width: 1600px; }
-    #s { width: 2400px; }
+    .grid-bg {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, black 20%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, black 20%, transparent 75%);
+    }
+
+    /* ---------- Nav ---------- */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(5, 5, 8, 0.55);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.4s, background 0.4s;
+    }
+    nav.scrolled { border-color: var(--border); background: rgba(5, 5, 8, 0.72); }
+    .nav-inner {
+      max-width: 1120px; margin: 0 auto; padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 700; letter-spacing: 0.04em; font-size: 15px; }
+    .brand-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: conic-gradient(from 0deg, #ff8a00, #ff5e00, #ffd9a8, #ff8a00);
+      box-shadow: 0 0 14px rgba(255, 138, 0, 0.8);
+      animation: spin 6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .cta-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-2));
+      color: #fff; text-decoration: none; font-weight: 600; font-size: 14px;
+      padding: 10px 20px; border-radius: 999px;
+      box-shadow: 0 4px 18px rgba(255, 110, 0, 0.35);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(255, 110, 0, 0.5); }
+    .cta-btn.ghost {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); box-shadow: none;
+    }
+    .cta-btn.ghost:hover { background: rgba(255,255,255,0.06); }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      max-width: 1120px; margin: 0 auto;
+      padding: 160px 24px 80px; text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-dim);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 8px 16px; background: rgba(255,255,255,0.03);
+    }
+    .badge .pulse {
+      width: 7px; height: 7px; border-radius: 50%; background: #34d399;
+      box-shadow: 0 0 10px #34d399; animation: blink 2.2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .hero h1 {
+      margin: 26px 0 20px;
+      font-size: clamp(40px, 7.2vw, 84px);
+      line-height: 1.04; letter-spacing: -0.03em; font-weight: 700;
+    }
+    .grad {
+      background: linear-gradient(100deg, #ffe18a 0%, var(--orange) 40%, var(--blue) 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero p.sub {
+      max-width: 620px; font-size: clamp(16px, 2.2vw, 20px);
+      line-height: 1.6; color: var(--text-dim);
+    }
+    .hero-cta { display: flex; gap: 14px; margin-top: 38px; flex-wrap: wrap; justify-content: center; }
+    .hero-cta .cta-btn { padding: 15px 32px; font-size: 15.5px; }
+    .hero small { margin-top: 22px; font-size: 12.5px; color: var(--text-dim); opacity: 0.8; }
+
+    /* ---------- Section titles ---------- */
+    .section-label {
+      text-align: center; font-size: 12.5px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange);
+      margin-bottom: 14px;
+    }
+    .section-title {
+      text-align: center; font-size: clamp(28px, 4.4vw, 46px);
+      letter-spacing: -0.02em; font-weight: 700; margin-bottom: 18px;
+    }
+    .section-desc {
+      text-align: center; color: var(--text-dim); font-size: 16px;
+      max-width: 560px; margin: 0 auto 54px; line-height: 1.6;
+    }
+
+    /* ---------- Bento grid ---------- */
+    .bento-wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; }
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-auto-rows: 142px;
+      gap: 16px;
+    }
+    .card {
+      position: relative; overflow: hidden;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), background 0.35s, border-color 0.35s, box-shadow 0.35s;
+      will-change: transform;
+    }
+    .card:hover {
+      background: var(--card-hover); border-color: rgba(255,255,255,0.16);
+      transform: translateY(-5px);
+      box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
+    }
+    .card .shine {
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    }
+    .card-icon {
+      width: 42px; height: 42px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    }
+    .card-icon svg { width: 22px; height: 22px; }
+    .card h3 { font-size: 16.5px; font-weight: 650; letter-spacing: -0.01em; margin-bottom: 7px; }
+    .card p { font-size: 13.5px; line-height: 1.55; color: var(--text-dim); }
+    .card .tag {
+      display: inline-block; margin-top: 12px; font-size: 11.5px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--text);
+      background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+      padding: 5px 11px; border-radius: 999px;
+    }
+
+    .accent-orange { color: var(--orange); background: rgba(255, 138, 0, 0.12); box-shadow: 0 0 24px rgba(255,138,0,0.25) inset; }
+    .accent-blue { color: var(--blue); background: rgba(0, 200, 255, 0.10); box-shadow: 0 0 24px rgba(0,200,255,0.2) inset; }
+    .accent-lime { color: #a3e635; background: rgba(163, 230, 53, 0.10); box-shadow: 0 0 24px rgba(163,230,53,0.15) inset; }
+    .accent-pink { color: #ff5e9c; background: rgba(255, 94, 156, 0.10); box-shadow: 0 0 24px rgba(255,94,156,0.15) inset; }
+
+    /* spans */
+    .sp-8 { grid-column: span 8; }
+    .sp-4 { grid-column: span 4; }
+    .row-2 { grid-row: span 2; }
+
+    /* card A — skeleton demo */
+    .card-demo { display: flex; flex-direction: column; justify-content: space-between; }
+    .card-demo .demo-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .card-demo h3 { font-size: clamp(19px, 2.6vw, 26px); letter-spacing: -0.02em; }
+    .card-demo h3 .grad { display: inline-block; }
+    .live-chip {
+      flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #7dd3fc; background: rgba(0, 200, 255, 0.08); border: 1px solid rgba(0,200,255,0.25);
+      padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+    }
+    .live-chip .pulse { width: 6px; height: 6px; border-radius: 50%; background: #00c8ff; box-shadow: 0 0 8px #00c8ff; animation: blink 1.6s ease-in-out infinite; }
+    .skeleton { display: block; width: 100%; max-height: 210px; margin-top: 14px; }
+    .skeleton .line { stroke: url(#lg-orange); stroke-width: 5; stroke-linecap: round; fill: none; }
+    .skeleton .joint { fill: #ffa94d; }
+    .skeleton .bone-fx { stroke: #fff; stroke-width: 1.5; stroke-linecap: round; fill: none; stroke-dasharray: 4 220; animation: flow 3.5s linear infinite; }
+    @keyframes flow { to { stroke-dashoffset: -224; } }
+    .skeleton-wrap { position: relative; }
+    .skeleton-wrap::after {
+      content: ""; position: absolute; inset: 8px 0; z-index: -1;
+      background: radial-gradient(closest-side, rgba(255,138,0,0.22), transparent);
+      filter: blur(18px);
+    }
+    .sk-row { display: flex; align-items: flex-end; gap: 26px; }
+    .sk-meta p { font-size: 12.5px; margin-bottom: 6px; }
+    .sk-meta b { color: var(--text); font-weight: 650; }
+    .meter { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .meter i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--orange), var(--blue)); animation: grow 1.4s ease infinite alternate; }
+    .meter.i2 { width: 74%; }
+    .meter.i3 { width: 52%; }
+    @keyframes grow { from { width: 12%; } to { width: 100%; } }
+
+    /* card D — video preview */
+    .card-vids { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+    .mini-vid {
+      position: relative; border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--border); height: 88px; background: #000;
+    }
+    .mini-vid video { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: screen; filter: saturate(1.2); }
+    .mini-vid .lv {
+      position: absolute; inset: 0; padding: 8px 12px; font-size: 10.5px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text);
+      background: linear-gradient(to top, rgba(0,0,0,0.5), transparent 60%);
+      display: flex; align-items: flex-end; justify-content: space-between;
+    }
+    .mini-vid .lv i { width: 6px; height: 6px; border-radius: 50%; background: #ff5b5b; box-shadow: 0 0 8px #ff5b5b; animation: blink 1.4s infinite; }
+    .card-vids .cap { font-size: 12px; color: var(--text-dim); text-align: center; }
+
+    /* ---------- How it works ---------- */
+    .how-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px 40px; }
+    .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .how-step {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 30px 26px; position: relative; text-align: left;
+    }
+    .step-num {
+      font-size: 13px; font-weight: 800; color: var(--orange);
+      letter-spacing: 0.1em; margin-bottom: 14px; display: block;
+    }
+    .how-step h3 { font-size: 17px; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .how-step p { font-size: 13.5px; color: var(--text-dim); line-height: 1.6; }
+    .how-step .arrow { position: absolute; right: 24px; top: 32px; color: var(--text-dim); font-size: 18px; }
+
+    /* ---------- CTA band ---------- */
+    .cta-band {
+      max-width: 1120px; margin: 72px auto 0; padding: 0 24px;
+    }
+    .cta-inner {
+      position: relative; overflow: hidden; text-align: center;
+      border: 1px solid var(--border); border-radius: 36px;
+      padding: 84px 30px;
+      background:
+        radial-gradient(60% 120% at 20% 0%, rgba(255,138,0,0.16), transparent 60%),
+        radial-gradient(60% 120% at 80% 100%, rgba(0,152,255,0.16), transparent 60%),
+        var(--bg-soft);
+    }
+    .cta-inner h2 { font-size: clamp(26px, 4.2vw, 44px); letter-spacing: -0.02em; margin-bottom: 14px; font-weight: 700; }
+    .cta-inner p { color: var(--text-dim); font-size: 15.5px; margin-bottom: 32px; }
+    .cta-inner .cta-btn { font-size: 16px; padding: 16px 36px; }
+
+    /* ---------- Footer ---------- */
+    footer { border-top: 1px solid var(--border); margin-top: 104px; padding: 34px 24px 40px; }
+    .footer-inner {
+      max-width: 1120px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      font-size: 12.5px; color: var(--text-dim);
+    }
+    .footer-inner a { color: var(--text-dim); text-decoration: none; }
+    .footer-inner a:hover { color: var(--text); }
+    .footer-inner .links { display: flex; gap: 22px; }
+
+    /* ---------- Reveal ---------- */
+    .rv { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+    .rv.in { opacity: 1; transform: none; }
+    .d1 { transition-delay: 0.08s; } .d2 { transition-delay: 0.16s; } .d3 { transition-delay: 0.24s; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+      .sp-8, .sp-4 { grid-column: span 12; }
+      .how-grid { grid-template-columns: 1fr; }
+      .card-demo .demo-top { flex-direction: column; }
+      .card-demo h3 { font-size: 22px; }
+    }
+    @media (max-width: 560px) {
+      .bento { grid-auto-rows: auto; }
+      .hero { padding-top: 130px; }
+      .hero-cta { flex-direction: column; align-items: center; }
+      .hero-cta .cta-btn { width: 100%; justify-content: center; }
+      .sk-row { flex-wrap: wrap; }
+      .footer-inner { justify-content: center; text-align: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
+      .rv { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>
 
-  <video id="v_src" autoplay playsinline></video>
-  <canvas id="out"></canvas>
-  <div class="darkness"></div>
+  <div class="glow"></div>
+  <div class="grid-bg"></div>
 
-  <video id="n" class="fx" src="assets/naruto.mp4" muted autoplay loop playsinline></video>
-  <video id="s" class="fx" src="assets/sasuke.mp4" muted autoplay loop playsinline></video>
+  <nav id="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#">
+        <span class="brand-dot"></span>
+        NARUTO × SASUKE
+      </a>
+      <a class="cta-btn" href="experience.html">Enter&nbsp;Experience
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <span class="badge"><span class="pulse"></span> Live on Netlify · MediaPipe Powered</span>
+    <h1>Unleash ninja power<br>from the <span class="grad">palm of your hand</span></h1>
+    <p class="sub">A real-time hand tracking experience. Open your hand and watch Naruto and Sasuke awaken — right in your browser, no installs, no cloud.</p>
+    <div class="hero-cta">
+      <a class="cta-btn" href="experience.html">Enter the Arena
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a class="cta-btn ghost" href="#features">How it works</a>
+    </div>
+    <small>Works on any device with a camera · Hand tracking runs 100% on your device</small>
+  </header>
+
+  <main id="features">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Power, laid out beautifully</h2>
+    <p class="section-desc">Every capability of the experience in one glance — tracked live, at your command.</p>
+
+    <section class="bento-wrap">
+      <div class="bento">
+
+        <!-- A. Big demo card -->
+        <div class="card card-demo sp-8 row-2 rv">
+          <span class="shine"></span>
+          <div class="demo-top">
+            <div>
+              <div class="card-icon accent-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+              </div>
+              <h3>Real-time <span class="grad">hand tracking</span><br>&nbsp;with 21 vivid landmarks</h3>
+            </div>
+            <span class="live-chip"><span class="pulse"></span> Live demo</span>
+          </div>
+          <div class="skeleton-wrap">
+            <svg class="skeleton" viewBox="0 0 420 300" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="lg-orange" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#ffb44d"/>
+                  <stop offset="100%" stop-color="#ff5e00"/>
+                </linearGradient>
+                <radialGradient id="glow-orange" cx="0.5" cy="0.5" r="0.5">
+                  <stop offset="0%" stop-color="#ff8a00" stop-opacity="0.9"/>
+                  <stop offset="100%" stop-color="#ff8a00" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <g class="line">
+                <path d="M210 292 L178 246 L132 208 L108 168"/>
+                <path d="M210 292 L232 246 L248 204 L252 162"/>
+                <path d="M210 292 L210 246 L208 192 L206 140"/>
+                <path d="M210 292 L188 246 L176 192 L170 140"/>
+                <path d="M132 208 L188 246 L232 246"/>
+              </g>
+              <g class="bone-fx">
+                <path d="M210 292 L178 246 L132 208 L108 168"/>
+                <path d="M210 292 L232 246 L248 204 L252 162"/>
+                <path d="M210 292 L210 246 L208 192 L206 140"/>
+                <path d="M210 292 L188 246 L176 192 L170 140"/>
+                <path d="M132 208 L188 246 L232 246"/>
+              </g>
+              <g class="joint">
+                <circle cx="210" cy="292" r="10" fill="url(#glow-orange)"/>
+                <circle cx="210" cy="292" r="5"/>
+                <circle cx="178" cy="246" r="4"/><circle cx="132" cy="208" r="4"/><circle cx="108" cy="168" r="4"/>
+                <circle cx="232" cy="246" r="4"/><circle cx="248" cy="204" r="4"/><circle cx="252" cy="162" r="4"/>
+                <circle cx="210" cy="246" r="4"/><circle cx="208" cy="192" r="4"/><circle cx="206" cy="140" r="4"/>
+                <circle cx="188" cy="246" r="4"/><circle cx="176" cy="192" r="4"/><circle cx="170" cy="140" r="4"/>
+              </g>
+            </svg>
+          </div>
+          <div class="sk-row">
+            <div class="sk-meta"><p><b>21 landmarks</b> per hand</p><div class="meter"><i class="i2"></i></div></div>
+            <div class="sk-meta"><p><b>2 hands</b> tracked at once</p><div class="meter"><i class="i3"></i></div></div>
+            <div class="sk-meta"><p><b>60 fps</b> camera input</p><div class="meter"><i class="i2"></i></div></div>
+          </div>
+        </div>
+
+        <!-- B. Naruto -->
+        <div class="card sp-4 rv d1">
+          <span class="shine"></span>
+          <div class="card-icon accent-orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L9.5 22L19 9.5H12.5L13 2z" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <h3>Rasengan Power</h3>
+          <p>Open your <b>left hand</b> and a blazing spiral follows your palm across the screen.</p>
+          <span class="tag">Left hand</span>
+        </div>
+
+        <!-- C. Sasuke -->
+        <div class="card sp-4 rv d2">
+          <span class="shine"></span>
+          <div class="card-icon accent-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <h3>Chidori Surge</h3>
+          <p>Open your <b>right hand</b> and crackling blue lightning fans out from your fingertips.</p>
+          <span class="tag">Right hand</span>
+        </div>
+
+        <!-- D. Video preview -->
+        <div class="card card-vids sp-4 row-2 rv d2">
+          <span class="shine"></span>
+          <div class="mini-vid">
+            <video src="assets/naruto.mp4" muted autoplay loop playsinline></video>
+            <div class="lv">Naruto <i></i></div>
+          </div>
+          <div class="mini-vid">
+            <video src="assets/sasuke.mp4" muted autoplay loop playsinline></video>
+            <div class="lv">Sasuke <i></i></div>
+          </div>
+          <p class="cap">The very same effects that activate in the experience</p>
+        </div>
+
+        <!-- E. Privacy -->
+        <div class="card sp-4 rv">
+          <span class="shine"></span>
+          <div class="card-icon accent-lime">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.8" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <h3>Private by design</h3>
+          <p>Hand tracking runs entirely on your device via MediaPipe. Your camera feed never leaves your browser.</p>
+        </div>
+
+        <!-- F. Netlify -->
+        <div class="card sp-4 rv d1">
+          <span class="shine"></span>
+          <div class="card-icon accent-orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5z"/><path d="M2 10h20"/></svg>
+          </div>
+          <h3>Netlify-ready</h3>
+          <p>100% static — built to deploy from GitHub in one click. Fast, global, zero servers.</p>
+          <span class="tag">Deployed</span>
+        </div>
+
+        <!-- G. Precision -->
+        <div class="card sp-4 rv d2">
+          <span class="shine"></span>
+          <div class="card-icon accent-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35" /><circle cx="11" cy="11" r="3" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <h3>Precision tracking</h3>
+          <p>21 joints tracked per hand with refined gesture detection — no clicks, no buttons, no remotes.</p>
+        </div>
+
+        <!-- H. No install -->
+        <div class="card sp-4 rv d3">
+          <span class="shine"></span>
+          <div class="card-icon accent-pink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h18M12 3v10"/><path d="M6 18h12M9 21l3-3 3 3" stroke-dasharray="2.4 2.4"/></svg>
+          </div>
+          <h3>Zero install</h3>
+          <p>Open the link, allow the camera, and go. Works on desktop and mobile browsers alike.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">Three steps to power</h2>
+    <section class="how-wrap">
+      <div class="how-grid">
+        <div class="how-step rv">
+          <span class="step-num">STEP 01</span><span class="arrow">→</span>
+          <h3>Allow the camera</h3>
+          <p>Your browser asks for camera permission once. Nothing is recorded or uploaded.</p>
+        </div>
+        <div class="how-step rv d1">
+          <span class="step-num">STEP 02</span><span class="arrow">→</span>
+          <h3>Open your hands</h3>
+          <p>Left hand calls forth Naruto, right hand summons Sasuke. Both can clash at once.</p>
+        </div>
+        <div class="how-step rv d2">
+          <span class="step-num">STEP 03</span><span class="arrow">→</span>
+          <h3>Rule the arena</h3>
+          <p>Move your palms to steer the power anywhere on screen. Close your hand to bank it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-band rv">
+      <div class="cta-inner">
+        <h2>Your hands are the controller.<br>The arena is waiting.</h2>
+        <p>Ready when you are — no downloads, no setup, no excuses.</p>
+        <a class="cta-btn" href="experience.html">Enter the Experience
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>© 2026 NARUTO × SASUKE Experience · Not affiliated with the official franchise</span>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="experience.html">Experience</a>
+        <a href="https://github.com/" target="_blank" rel="noopener">Source</a>
+      </div>
+    </div>
+  </footer>
 
   <script>
-    const vElement = document.getElementById('v_src');
-    const cElement = document.getElementById('out');
-    const ctx = cElement.getContext('2d');
-    const n = document.getElementById('n');
-    const s = document.getElementById('s');
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 10), { passive: true });
 
-    let pwr = [0, 0]; 
-    let wasOpen = [false, false];
-
-    function checkOpen(pts) {
-        let count = 0;
-        const wrist = pts[0];
-        const tips = [8, 12, 16, 20];
-        const pips = [6, 10, 14, 18];
-        for (let i = 0; i < tips.length; i++) {
-            const tip = pts[tips[i]];
-            const pip = pts[pips[i]];
-            if (Math.hypot(tip.x - wrist.x, tip.y - wrist.y) > Math.hypot(pip.x - wrist.x, pip.y - wrist.y)) count++;
-        }
-        return count >= 3;
-    }
-
-    function onResults(res) {
-        cElement.width = vElement.videoWidth;
-        cElement.height = vElement.videoHeight;
-        ctx.save();
-        ctx.clearRect(0, 0, cElement.width, cElement.height);
-
-        let fL = false;
-        let fR = false;
-
-        n.style.display = 'none';
-        s.style.display = 'none';
-
-        if (res.multiHandLandmarks && res.multiHandedness) {
-            res.multiHandLandmarks.forEach((pts, i) => {
-                const label = res.multiHandedness[i].label;
-                const isR = label === 'Right';
-                const idx = isR ? 1 : 0;
-
-                // --- BRIGHT BLUE SKELETON ---
-                ctx.save();
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#00fbff';
-                drawConnectors(ctx, pts, HAND_CONNECTIONS, {color: '#00d4ff', lineWidth: 3});
-                drawLandmarks(ctx, pts, {color: '#ffffff', lineWidth: 1, radius: 2});
-                ctx.restore();
-
-                const open = checkOpen(pts);
-                pwr[idx] += open ? 0.05 : -0.15;
-                pwr[idx] = Math.max(0, Math.min(1, pwr[idx]));
-
-                if (open && !wasOpen[idx]) {
-                    const vid = isR ? s : n;
-                    vid.currentTime = 0;
-                    vid.play();
-                }
-                wasOpen[idx] = open;
-
-                const wrist = pts[0];
-                const knk = pts[9];
-
-                if (pwr[idx] > 0.01) {
-                    if (isR) { 
-                        fR = true;
-                        const tx = (wrist.x + knk.x) / 2;
-                        const ty = (wrist.y + knk.y) / 2;
-                        s.style.left = `${(1 - tx) * window.innerWidth}px`;
-                        s.style.top = `${ty * window.innerHeight}px`;
-                        s.style.display = 'block';
-                        s.style.opacity = pwr[idx]; 
-                    } else { 
-                        fL = true;
-                        const dx = knk.x - wrist.x;
-                        const dy = knk.y - wrist.y;
-                        const tx = knk.x + (dx * 0.8);
-                        const ty = knk.y + (dy * 0.8);
-                        n.style.left = `${(1 - tx) * window.innerWidth}px`;
-                        n.style.top = `${(ty * window.innerHeight) - 120}px`;
-                        n.style.display = 'block';
-                        n.style.opacity = pwr[idx]; 
-                    }
-                }
-            });
-        }
-
-        if (!fL) {
-            pwr[0] = Math.max(0, pwr[0] - 0.15);
-            if (pwr[0] > 0.01) { n.style.display = 'block'; n.style.opacity = pwr[0]; }
-            wasOpen[0] = false;
-        }
-        if (!fR) {
-            pwr[1] = Math.max(0, pwr[1] - 0.15);
-            if (pwr[1] > 0.01) { s.style.display = 'block'; s.style.opacity = pwr[1]; }
-            wasOpen[1] = false;
-        }
-        ctx.restore();
-    }
-
-    const h = new Hands({
-        locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
-    });
-
-    h.setOptions({
-        maxNumHands: 2,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.65,
-        minTrackingConfidence: 0.65
-    });
-
-    h.onResults(onResults);
-
-    const cam = new Camera(vElement, {
-        onFrame: async () => { await h.send({ image: vElement }); },
-        width: 1280, height: 720
-    });
-    cam.start();
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.rv').forEach(el => io.observe(el));
   </script>
 </body>
 </html>
