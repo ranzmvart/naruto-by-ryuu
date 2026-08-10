@@ -56,8 +56,11 @@
     @media (max-width: 640px) {
       .hint { white-space: normal; width: calc(100% - 32px); border-radius: 16px; }
     }
-    .cam-btn {
+    .ctrl {
       position: fixed; right: 16px; bottom: 18px; z-index: 100;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .ctrl button {
       width: 46px; height: 46px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       background: rgba(10,10,16,0.55); border: 1px solid rgba(255,255,255,0.16);
@@ -65,10 +68,12 @@
       color: #f5f5f7; cursor: pointer;
       transition: background 0.25s, transform 0.25s;
     }
-    .cam-btn:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
-    .cam-btn:disabled { opacity: 0.5; cursor: wait; }
+    .ctrl button:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
+    .ctrl button:disabled { opacity: 0.5; cursor: wait; }
+    .ctrl button.off { color: #86868b; }
+    .ctrl button svg { width: 20px; height: 20px; }
     @media (max-width: 640px) {
-      .cam-btn { bottom: 64px; }
+      .ctrl { bottom: 64px; }
     }
 
     /* ---------- Loading intro: Rasengan x Chidori ---------- */
@@ -194,9 +199,17 @@
 
   <div class="hint">Left hand = Naruto &nbsp;·&nbsp; Right hand = Sasuke</div>
 
+  <div class="ctrl">
   <button id="camBtn" class="cam-btn" title="Ganti kamera" aria-label="Ganti kamera">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a9 9 0 0 1 15-3l2 2"/><path d="M21 16a9 9 0 0 1-15 3l-2-2"/><path d="M20 4v3h-3"/><path d="M4 20v-3h3"/></svg>
   </button>
+  <button id="sndBtn" class="snd-btn" title="Suara on/off" aria-label="Suara on/off">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4V5z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+  </button>
+</div>
+
+<audio id="sndN" src="assets/sound/rasengan.mp3" preload="auto"></audio>
+<audio id="sndS" src="assets/sound/chidori.mp3" preload="auto"></audio>
 
   <video id="n" class="fx" src="assets/naruto.mp4" muted autoplay loop playsinline></video>
   <video id="s" class="fx" src="assets/sasuke.mp4" muted autoplay loop playsinline></video>
@@ -277,6 +290,11 @@
                     const vid = isR ? s : n;
                     vid.currentTime = 0;
                     vid.play();
+                    if (soundOn && audioUnlocked) {
+                        const snd = isR ? sndS : sndN;
+                        snd.currentTime = 0;
+                        snd.play().catch(() => {});
+                    }
                 }
                 wasOpen[idx] = open;
 
@@ -336,6 +354,23 @@
     let cam = null;
     let facing = 'user';
     const camBtn = document.getElementById('camBtn');
+    const sndBtn = document.getElementById('sndBtn');
+    const sndN = document.getElementById('sndN');
+    const sndS = document.getElementById('sndS');
+    let soundOn = true;
+    let audioUnlocked = false;
+
+    function unlockAudio() {
+      audioUnlocked = true;
+      sndN.play().catch(() => {});
+    }
+    document.addEventListener('pointerdown', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
+
+    sndBtn.addEventListener('click', () => {
+      soundOn = !soundOn;
+      sndBtn.classList.toggle('off', !soundOn);
+    });
 
     function startCam() {
       if (cam) cam.stop();
